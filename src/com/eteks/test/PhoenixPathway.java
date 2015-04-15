@@ -95,7 +95,7 @@ public class PhoenixPathway extends Plugin
 				*/
 				
 				// ===================================================== //		
-				
+				/*
 				Points a = new Points(300.0f, 1000.0f);
 				Points b = new Points(600.0f, 1001.0f);
 				
@@ -103,12 +103,24 @@ public class PhoenixPathway extends Plugin
 				Points endLine = new Points(600.0f, 1000.0f);
 				
 				boolean bOnSameSide = checkPointOnSameSide(a, b, startLine, endLine);
+				*/
+				
+				// ===================================================== //	
+								
+				Points a = new Points(450.0f, 943.0f);
+				
+				Points startLine = new Points(0.0f, 800.0f); 
+				Points endLine = new Points(20.0f, 820.0f); //new Points(600.0f, 1000.0f);
+				
+				float tolerance = 0.50f; // 5 mm 
+				
+				boolean bInBetween = checkPointInBetween(a, startLine, endLine, tolerance);
 				
 				// ===================================================== //	
 				
 				long endTime = System.nanoTime();
 				
-				JOptionPane.showMessageDialog(null, bOnSameSide + " -> Time : " + (endTime - startTime) + " ns \n");
+				JOptionPane.showMessageDialog(null, bInBetween + " -> Time : " + (endTime - startTime) + " ns \n");
 				
 			}
 			catch(Exception e)
@@ -184,6 +196,28 @@ public class PhoenixPathway extends Plugin
 				bRet = true;
 			
 			return bRet;
+		}
+		
+		public boolean checkPointInBetween(Points test, Points start, Points end, float tolPercent)
+		{
+			boolean bRet = false;
+			
+			float distST = calcDistance(start, test);
+			float distTE = calcDistance(test, end);
+			float distSE = calcDistance(start, end);
+			
+			float distSEAbs = (float)(Math.abs(distST + distTE - distSE));
+					
+			if(distSEAbs <= tolPercent)
+				bRet = true;
+			
+			return bRet;			
+		}
+		
+		public float calcDistance(Points p1, Points p2)
+		{
+			float d = (float) Math.sqrt(((p2.x - p1.x) * (p2.x - p1.x)) + ((p2.y - p1.y)*(p2.y - p1.y)));
+			return d;
 		}
 		
 		// ======================= INIT FUNCTIONS ======================= //
