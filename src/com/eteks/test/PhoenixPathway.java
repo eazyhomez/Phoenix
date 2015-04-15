@@ -2,7 +2,11 @@ package com.eteks.test;
 
 import java.util.ArrayList;
 import java.util.List;
+
 import javax.swing.JOptionPane;
+
+import com.eteks.sweethome3d.model.CatalogPieceOfFurniture;
+import com.eteks.sweethome3d.model.FurnitureCategory;
 import com.eteks.sweethome3d.model.Home;
 import com.eteks.sweethome3d.model.HomePieceOfFurniture;
 import com.eteks.sweethome3d.model.Room;
@@ -21,6 +25,8 @@ public class PhoenixPathway extends Plugin
 	
 	//public List<HomePieceOfFurniture> furnList = new ArrayList<HomePieceOfFurniture>();
 	
+	public HomePieceOfFurniture[] markBoxes = new HomePieceOfFurniture[2];
+	
 	public class RoomTestAction extends PluginAction 
 	{		
 
@@ -34,12 +40,6 @@ public class PhoenixPathway extends Plugin
 		{
 			float x;
 			float y;
-			
-			public Points()
-			{
-				x = -10.0f;
-				y = -10.0f;
-			}
 			
 			public Points(float xCoord , float yCoord)
 			{
@@ -58,44 +58,6 @@ public class PhoenixPathway extends Plugin
 				startP = sP;
 				endP = eP;
 			}
-		}	
-		
-		public class WallSegement
-		{
-			Points startP;		// x, y
-			Points endP;		// x, y
-			float len;
-			
-			public WallSegement(Points sP, Points eP, float l)
-			{
-				startP = sP;
-				endP = eP;
-				len = l;
-			}
-		}
-		
-		public class Intersect
-		{
-			Points p;
-			float dist;
-			
-			public Intersect(Points inP, float inD)
-			{
-				p = inP;
-				dist = inD;
-			}
-		}
-		
-		public class InterPoints
-		{
-			Points p;
-			boolean bOrg;
-			
-			public InterPoints(Points inP, boolean inB)
-			{
-				p = inP;
-				bOrg = inB;
-			}
 		}
 		
 		public RoomTestAction() 
@@ -111,19 +73,29 @@ public class PhoenixPathway extends Plugin
 		public void execute() 
 		{	
 			home = getHome();
-			room = home.getRooms().get(0);
-			
-			long startTime = System.currentTimeMillis();
 			
 			try
 			{				
 				storeAllFurnRects(home);
 				storeAllWallRects(home);
-
 				
-				long endTime = System.currentTimeMillis();
+				markBoxes = getMarkerBoxes();
+				long startTime = System.nanoTime();
 				
-				JOptionPane.showMessageDialog(null, "Time : " + (endTime - startTime) + " ms \n");
+				// ===================================================== //
+				
+				Points centerP = new Points(350.0f, 950.0f);
+				float radius = 150.0f;
+				
+				Points startLine = new Points(0.0f, 800.0f);
+				Points endLine = new Points(600.0f, 1000.0f);
+				
+				List<Points> intList = getIntersectionCircleLine(centerP, radius, startLine, endLine);
+				
+				// ===================================================== //				
+				long endTime = System.nanoTime();
+				
+				JOptionPane.showMessageDialog(null, "Time : " + (endTime - startTime) + " ns \n");
 				
 			}
 			catch(Exception e)
@@ -132,6 +104,58 @@ public class PhoenixPathway extends Plugin
 				e.printStackTrace();
 			}
 		}
+		
+		
+		public List<Points> getIntersectionCircleLine(Points center, float rad, Points startL, Points endL)
+		{
+			List<Points> interList = new ArrayList<Points>();
+			
+			// Equation of Line
+			float m = ((endL.y - startL.y) / (endL.x - startL.x));
+			float c = startL.y - (m*startL.x);
+			
+			// (m^2+1)x^2 + 2(mc−mq−p)x + (q^2−r^2+p^2−2cq+c^2) = 0			
+			
+			float A = (m*m) + 1;
+			float B = 2*((m*c) - (m*center.y) - center.x);
+			float C = (center.y*center.y) - (rad*rad) + (center.x*center.x) - 2*(c*center.y) + (c*c);
+			
+			float D = (B*B) - 4*A*C;
+			
+			if(D == 0)
+			{
+				float x1 = ((-B) + (float)Math.sqrt(D)) / (2*A);
+				float y1 = (m*x1) + c;
+				
+				Points inter = new Points(x1, y1);
+				interList.add(inter);	
+				
+				//putMarkers(inter, false);
+			}
+			else if (D > 0)
+			{
+				float x1 = ((-B) + (float)Math.sqrt(D)) / (2*A);
+				float y1 = (m*x1) + c;
+				
+				Points inter1 = new Points(x1, y1);
+				interList.add(inter1);
+				
+				//putMarkers(inter1, false);
+				
+				float x2 = ((-B) - (float)Math.sqrt(D)) / (2*A);
+				float y2 = (m*x2) + c;
+				
+				Points inter2 = new Points(x2, y2);
+				interList.add(inter2);
+				
+				//putMarkers(inter2, false);
+			}
+			
+			return interList;
+		}
+		
+		
+		// ======================= INIT FUNCTIONS ======================= //
 		
 		public void storeAllFurnRects(Home h)
 		{			
@@ -164,8 +188,7 @@ public class PhoenixPathway extends Plugin
 		
 		public void storeAllWallRects(Home h)
 		{
-			int wallCount = 1;
-			
+			int wallCount = 1;			
 			//String debugStr = "";
 			
 			for(Wall w: h.getWalls())
@@ -176,12 +199,63 @@ public class PhoenixPathway extends Plugin
 				furnRects.add(wRect);
 				furnThicks.add(w.getThickness());		
 				
-				//debugStr += ("Wall_"+ wallCount +" : " + wRect[0][0] + "," + wRect[0][1] + " / " + wRect[1][0] + "," + wRect[1][1] + " / " + wRect[2][0] + "," + wRect[2][1] + " / " + wRect[3][0] + "," + wRect[3][1] + "\n\n");
-				
+				//debugStr += ("Wall_"+ wallCount +" : " + wRect[0][0] + "," + wRect[0][1] + " / " + wRect[1][0] + "," + wRect[1][1] + " / " + wRect[2][0] + "," + wRect[2][1] + " / " + wRect[3][0] + "," + wRect[3][1] + "\n\n");			
 				wallCount++;
 			}
 			
 			//JOptionPane.showMessageDialog(null, furnRect);
+		}
+		
+		
+		// ======================= DEBUG FUNCTIONS ======================= //
+		
+		public void putMarkers(Points p, boolean bIsRed)
+		{
+			HomePieceOfFurniture box = null;
+			
+			if(bIsRed)
+				box = markBoxes[0].clone();
+			else
+				box = markBoxes[1].clone();
+			
+			box.setX(p.x);
+			box.setY(p.y);
+			home.addPieceOfFurniture(box);
+		}
+		
+		public HomePieceOfFurniture[] getMarkerBoxes()
+		{
+			HomePieceOfFurniture[] markBoxes = new HomePieceOfFurniture[2];
+			int count = 0;
+			
+			List<FurnitureCategory> fCatg = getUserPreferences().getFurnitureCatalog().getCategories();
+			
+			for(int c = 0; c < fCatg.size(); c++ )
+			{
+				if(count >= 2)
+					break;
+				
+				List<CatalogPieceOfFurniture> catPOF = fCatg.get(c).getFurniture();
+
+				for(int p = 0; p < catPOF.size(); p++ )
+				{
+					if(catPOF.get(p).getName().equals("boxred"))
+					{
+						markBoxes[0] = new HomePieceOfFurniture(catPOF.get(p));
+						count++;
+					}
+					else if(catPOF.get(p).getName().equals("boxgreen"))
+					{
+						markBoxes[1] = new HomePieceOfFurniture(catPOF.get(p));
+						count++;
+					}
+					
+					if(count >= 2)
+						break;
+				}	
+			}
+			
+			return markBoxes;
 		}
 	}
 	
