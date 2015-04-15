@@ -76,14 +76,15 @@ public class PhoenixPathway extends Plugin
 			
 			try
 			{				
-				storeAllFurnRects(home);
-				storeAllWallRects(home);
+				//storeAllFurnRects(home);
+				//storeAllWallRects(home);				
+				//markBoxes = getMarkerBoxes();
 				
-				markBoxes = getMarkerBoxes();
 				long startTime = System.nanoTime();
 				
 				// ===================================================== //
 				
+				/*
 				Points centerP = new Points(350.0f, 950.0f);
 				float radius = 150.0f;
 				
@@ -91,11 +92,23 @@ public class PhoenixPathway extends Plugin
 				Points endLine = new Points(600.0f, 1000.0f);
 				
 				List<Points> intList = getIntersectionCircleLine(centerP, radius, startLine, endLine);
+				*/
 				
-				// ===================================================== //				
+				// ===================================================== //		
+				
+				Points a = new Points(300.0f, 1000.0f);
+				Points b = new Points(600.0f, 1001.0f);
+				
+				Points startLine = new Points(0.0f, 800.0f);
+				Points endLine = new Points(600.0f, 1000.0f);
+				
+				boolean bOnSameSide = checkPointOnSameSide(a, b, startLine, endLine);
+				
+				// ===================================================== //	
+				
 				long endTime = System.nanoTime();
 				
-				JOptionPane.showMessageDialog(null, "Time : " + (endTime - startTime) + " ns \n");
+				JOptionPane.showMessageDialog(null, bOnSameSide + " -> Time : " + (endTime - startTime) + " ns \n");
 				
 			}
 			catch(Exception e)
@@ -155,6 +168,24 @@ public class PhoenixPathway extends Plugin
 		}
 		
 		
+		// ======================= UTILITY FUNCTIONS ======================= //
+		
+		public boolean checkPointOnSameSide(Points a, Points b, Points pS1, Points pS2)
+		{
+			boolean bRet = false;
+			
+			// ((y1−y2)(ax−x1)+(x2−x1)(ay−y1))((y1−y2)(bx−x1)+(x2−x1)(by−y1)) < 0
+			
+			float res = ( ((pS1.y - pS2.y)*(a.x - pS1.x)) + ((pS2.x - pS1.x)*(a.y - pS1.y)) )*( ((pS1.y - pS2.y)*(b.x - pS1.x)) + ((pS2.x - pS1.x)*(b.y - pS1.y)) );
+			
+			if(res < 0)
+				bRet = false;
+			else
+				bRet = true;
+			
+			return bRet;
+		}
+		
 		// ======================= INIT FUNCTIONS ======================= //
 		
 		public void storeAllFurnRects(Home h)
@@ -184,8 +215,7 @@ public class PhoenixPathway extends Plugin
 				}
 			}
 		}
-		
-		
+				
 		public void storeAllWallRects(Home h)
 		{
 			int wallCount = 1;			
