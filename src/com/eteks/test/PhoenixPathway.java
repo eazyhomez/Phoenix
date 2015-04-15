@@ -78,18 +78,17 @@ public class PhoenixPathway extends Plugin
 			{				
 				//storeAllFurnRects(home);
 				//storeAllWallRects(home);				
-				//markBoxes = getMarkerBoxes();
+				markBoxes = getMarkerBoxes();
 				
 				long startTime = System.nanoTime();
 				
 				// ===================================================== //
+				/*				
+				Points centerP = new Points(100.0f, 300.0f);
+				float radius = 141.4f;
 				
-				/*
-				Points centerP = new Points(350.0f, 950.0f);
-				float radius = 150.0f;
-				
-				Points startLine = new Points(0.0f, 800.0f);
-				Points endLine = new Points(600.0f, 1000.0f);
+				Points startLine = new Points(-100.0f, 220.0f);
+				Points endLine = new Points(300.0f, 200.0f);
 				
 				List<Points> intList = getIntersectionCircleLine(centerP, radius, startLine, endLine);
 				*/
@@ -106,7 +105,7 @@ public class PhoenixPathway extends Plugin
 				*/
 				
 				// ===================================================== //	
-								
+				/*				
 				Points a = new Points(450.0f, 943.0f);
 				
 				Points startLine = new Points(0.0f, 800.0f); 
@@ -115,12 +114,48 @@ public class PhoenixPathway extends Plugin
 				float tolerance = 0.50f; // 5 mm 
 				
 				boolean bInBetween = checkPointInBetween(a, startLine, endLine, tolerance);
+				*/
+				// ===================================================== //	
+				
+				String debugStr = "";
+				
+				double MAX_ANGLE = (180 * (float)(Math.PI/180));
+				double ANGLE_ADJUSTMENT = -(20 * (float)(Math.PI/180));
+				
+				float tolerance = 0.50f; // 5 mm 
+				
+				Points centerP = new Points(100.0f, 300.0f);
+				float radius = 141.4f;
+				
+				Points startLine = new Points(-100.0f, 100.0f);
+				Points endLine = new Points(300.0f, 500.0f);			
+
+				float aX1 = centerP.x + (radius * (float)(Math.cos(ANGLE_ADJUSTMENT)));
+				float aY1 = centerP.y + (radius * (float)(Math.sin(ANGLE_ADJUSTMENT)));
+				Points pArc1 = new Points(aX1, aY1);
+				putMarkers(pArc1, true);
+				
+				debugStr += ("x:" + pArc1.x + ", y:" + pArc1.y + "\n");
+				
+				float aX2 = centerP.x + (radius * (float)(Math.cos(MAX_ANGLE - ANGLE_ADJUSTMENT)));
+				float aY2 = centerP.y + (radius * (float)(Math.sin(MAX_ANGLE - ANGLE_ADJUSTMENT)));
+				Points pArc2 = new Points(aX2, aY2);			
+				putMarkers(pArc2, true);
+				
+				debugStr += ("x:" + pArc2.x + ", y:" + pArc2.y + "\n");
+				
+				List<Points> interP = getIntersectionArcLineSeg(centerP, radius, startLine, endLine, pArc1, pArc2);
 				
 				// ===================================================== //	
 				
 				long endTime = System.nanoTime();
 				
-				JOptionPane.showMessageDialog(null, bInBetween + " -> Time : " + (endTime - startTime) + " ns \n");
+				for(Points p : interP)
+				{
+					putMarkers(p, false);
+				}
+				
+				JOptionPane.showMessageDialog(null, "Time : " + (endTime - startTime) + " ns \n");
 				
 			}
 			catch(Exception e)
@@ -131,49 +166,92 @@ public class PhoenixPathway extends Plugin
 		}
 		
 		
+		public List<Points> getIntersectionArcLineSeg(Points center, float rad, Points startL, Points endL, Points arcP1, Points arcP2)
+		{
+			List<Points> retList = new ArrayList<Points>();
+			
+			List<Points> interList = getIntersectionCircleLine(center, rad, startL, endL);
+			
+			for(Points p : interList)
+			{
+				boolean bOnSameSide = checkPointOnSameSide(center, p, arcP1, arcP2);
+				
+				if(!bOnSameSide)
+					retList.add(p);
+			}		
+			
+			return retList;
+		}
+		
+		
 		public List<Points> getIntersectionCircleLine(Points center, float rad, Points startL, Points endL)
 		{
 			List<Points> interList = new ArrayList<Points>();
 			
-			// Equation of Line
-			float m = ((endL.y - startL.y) / (endL.x - startL.x));
-			float c = startL.y - (m*startL.x);
-			
-			// (m^2+1)x^2 + 2(mc−mq−p)x + (q^2−r^2+p^2−2cq+c^2) = 0			
-			
-			float A = (m*m) + 1;
-			float B = 2*((m*c) - (m*center.y) - center.x);
-			float C = (center.y*center.y) - (rad*rad) + (center.x*center.x) - 2*(c*center.y) + (c*c);
-			
-			float D = (B*B) - 4*A*C;
-			
-			if(D == 0)
-			{
-				float x1 = ((-B) + (float)Math.sqrt(D)) / (2*A);
-				float y1 = (m*x1) + c;
-				
-				Points inter = new Points(x1, y1);
-				interList.add(inter);	
-				
-				//putMarkers(inter, false);
+			try
+			{	
+				if(endL.x == startL.x)
+				{
+					float x01 = center.x;
+					float y01 = center.y - rad;
+					
+					Points inter1 = new Points(x01, y01);
+					interList.add(inter1);
+					
+					float x02 = center.x;
+					float y02 = center.y + rad;
+					
+					Points inter2 = new Points(x02, y02);
+					interList.add(inter2);
+				}
+				else
+				{
+					// Equation of Line
+					float m = ((endL.y - startL.y) / (endL.x - startL.x));
+					float c = startL.y - (m*startL.x);
+					
+					// (m^2+1)x^2 + 2(mc−mq−p)x + (q^2−r^2+p^2−2cq+c^2) = 0			
+					
+					float A = (m*m) + 1;
+					float B = 2*((m*c) - (m*center.y) - center.x);
+					float C = (center.y*center.y) - (rad*rad) + (center.x*center.x) - 2*(c*center.y) + (c*c);
+					
+					float D = (B*B) - 4*A*C;
+					
+					if(D == 0)
+					{
+						float x1 = ((-B) + (float)Math.sqrt(D)) / (2*A);
+						float y1 = (m*x1) + c;
+						
+						Points inter = new Points(x1, y1);
+						interList.add(inter);	
+						
+						//putMarkers(inter, true);
+					}
+					else if (D > 0)
+					{
+						float x1 = ((-B) + (float)Math.sqrt(D)) / (2*A);
+						float y1 = (m*x1) + c;
+						
+						Points inter1 = new Points(x1, y1);
+						interList.add(inter1);
+						
+						//putMarkers(inter1, false);
+						
+						float x2 = ((-B) - (float)Math.sqrt(D)) / (2*A);
+						float y2 = (m*x2) + c;
+						
+						Points inter2 = new Points(x2, y2);
+						interList.add(inter2);
+						
+						//putMarkers(inter2, false);
+					}
+				}				
 			}
-			else if (D > 0)
+			catch(Exception e)
 			{
-				float x1 = ((-B) + (float)Math.sqrt(D)) / (2*A);
-				float y1 = (m*x1) + c;
-				
-				Points inter1 = new Points(x1, y1);
-				interList.add(inter1);
-				
-				//putMarkers(inter1, false);
-				
-				float x2 = ((-B) - (float)Math.sqrt(D)) / (2*A);
-				float y2 = (m*x2) + c;
-				
-				Points inter2 = new Points(x2, y2);
-				interList.add(inter2);
-				
-				//putMarkers(inter2, false);
+				JOptionPane.showMessageDialog(null," -xxxxx- EXCEPTION : " + e.getMessage()); 
+				e.printStackTrace();
 			}
 			
 			return interList;
