@@ -33,6 +33,7 @@ public class PhoenixPathway extends Plugin
 		public Home home = null;
 		public Room room = null;
 		
+		public float ROOM_TOLERANCE = 0.51f;
 		
 		// ======================= CLASSES ======================= //
 		
@@ -73,17 +74,18 @@ public class PhoenixPathway extends Plugin
 		public void execute() 
 		{	
 			home = getHome();
+			room = home.getRooms().get(0);
 			
 			try
 			{				
-				//storeAllFurnRects(home);
-				//storeAllWallRects(home);				
+				storeAllFurnRects(home);
+				storeAllWallRects(home);				
 				markBoxes = getMarkerBoxes();
 				
 				long startTime = System.nanoTime();
 				
 				// ===================================================== //
-							
+				/*			
 				Points centerP = new Points(200.0f, 400.0f);
 				float radius = 141.4f;
 				
@@ -91,7 +93,7 @@ public class PhoenixPathway extends Plugin
 				Points endLine = new Points(500.0f, 300.0f);
 				
 				List<Points> intList = getIntersectionCircleLine(centerP, radius, startLine, endLine);
-				
+				*/
 				
 				// ===================================================== //		
 				/*
@@ -115,6 +117,7 @@ public class PhoenixPathway extends Plugin
 				
 				boolean bInBetween = checkPointInBetween(a, startLine, endLine, tolerance);
 				*/
+				
 				// ===================================================== //	
 				/*
 				String debugStr = "";
@@ -138,6 +141,7 @@ public class PhoenixPathway extends Plugin
 				
 				List<Points> interP = getIntersectionArcLineSeg(centerP, radius, startLine, endLine, pArc1, pArc2);
 				*/
+				
 				// ===================================================== //	
 				/*
 				double MAX_ANGLE = (180 * (float)(Math.PI/180));
@@ -177,8 +181,6 @@ public class PhoenixPathway extends Plugin
 				float aY2 = centerP.y + (radius * (float)(Math.sin(MAX_ANGLE - ANGLE_ADJUSTMENT)));
 				Points pArc2 = new Points(aX2, aY2);
 				
-				//float minDist = 10000.0f;
-				
 				for(int l = 0; l < lsList.size(); l++)
 				{
 					List<Points> interP = getIntersectionArcLineSeg(centerP, radius, lsList.get(l).startP, lsList.get(l).endP, pArc1, pArc2);
@@ -189,12 +191,38 @@ public class PhoenixPathway extends Plugin
 					}									
 				}
 				*/
+				
+				// ===================================================== //	
+				
+				double MAX_ANGLE = (180 * (float)(Math.PI/180));
+				double ANGLE_ADJUSTMENT = -(20 * (float)(Math.PI/180));
+				
+				Points centerP = new Points(200.0f, 400.0f);
+				float radius = 141.4f;		
+				float tolerance = 0.5f; // 5 mm
+				
+				float aX1 = centerP.x + (radius * (float)(Math.cos(ANGLE_ADJUSTMENT)));
+				float aY1 = centerP.y + (radius * (float)(Math.sin(ANGLE_ADJUSTMENT)));
+				Points pArc1 = new Points(aX1, aY1);
+				
+				float aX2 = centerP.x + (radius * (float)(Math.cos(MAX_ANGLE - ANGLE_ADJUSTMENT)));
+				float aY2 = centerP.y + (radius * (float)(Math.sin(MAX_ANGLE - ANGLE_ADJUSTMENT)));
+				Points pArc2 = new Points(aX2, aY2);
+			
+				List<Points> interPList = new ArrayList<Points>();	
+				
+				for( float[][] fRects : furnRects)
+				{
+					List<Points> intList = getIntersectionArcRectangle(centerP, radius, fRects, pArc1, pArc2, tolerance);
+					interPList.addAll(intList);
+				}
+				
 				// ===================================================== //	
 				
 				long endTime = System.nanoTime();
 				
-				//putMarkers(pArc1, true);
-				//putMarkers(pArc2, true);
+				putMarkers(pArc1, true);
+				putMarkers(pArc2, true);
 				
 				//putMarkers(minInter, true);
 				
@@ -208,6 +236,51 @@ public class PhoenixPathway extends Plugin
 			}
 		}
 		
+		public List<Points> getIntersectionArcRectangle(Points center, float rad, float[][] furnRect, Points arcP1, Points arcP2, float tolerance)
+		{
+			List<Points> retList = new ArrayList<Points>();			
+			List<LineSegement> lsList = new ArrayList<LineSegement>();
+			
+			//JOptionPane.showMessageDialog(null,("furn : " + furnRect[0][0] + "," + furnRect[0][1] + " / " + furnRect[1][0] + "," + furnRect[1][1] + " / " + furnRect[2][0] + "," + furnRect[2][1] + " / " + furnRect[3][0] + "," + furnRect[3][1]));
+			
+			for(int f = 0; f < furnRect.length; f++)
+			{
+				Points startLine = new Points(furnRect[f][0], furnRect[f][1]);
+				
+				Points endLine = null;
+				
+				if(f == (furnRect.length - 1))
+					endLine = new Points(furnRect[0][0], furnRect[0][1]);
+				else
+					endLine = new Points(furnRect[f+1][0], furnRect[f+1][1]);				
+				
+				LineSegement ls = new LineSegement(startLine, endLine);
+				lsList.add(ls);
+			}
+			
+			for(int l = 0; l < lsList.size(); l++)
+			{
+				Points startP = lsList.get(l).startP;
+				Points endP = lsList.get(l).endP;
+				
+				List<Points> interP = getIntersectionArcLineSeg(center, rad, startP, endP, arcP1, arcP2);
+				
+				for(Points inter : interP)
+				{		
+					boolean bInBetween = checkPointInBetween(inter, startP, endP, tolerance);
+					
+					if(bInBetween)
+					{
+						retList.addAll(interP);
+						putMarkers(inter, false);
+					}
+					//else
+						//putMarkers(inter, true);
+				}									
+			}
+			
+			return retList;
+		}
 		
 		public List<Points> getIntersectionArcLineSeg(Points center, float rad, Points startL, Points endL, Points arcP1, Points arcP2)
 		{
@@ -380,22 +453,38 @@ public class PhoenixPathway extends Plugin
 				
 		public void storeAllWallRects(Home h)
 		{
-			int wallCount = 1;			
-			//String debugStr = "";
+			int wallCount = 1;
 			
 			for(Wall w: h.getWalls())
 			{
-				furnIds.add("wall_" + wallCount);
-				
+				furnIds.add("wall_" + wallCount);				
 				float[][] wRect = w.getPoints();
-				furnRects.add(wRect);
-				furnThicks.add(w.getThickness());		
 				
-				//debugStr += ("Wall_"+ wallCount +" : " + wRect[0][0] + "," + wRect[0][1] + " / " + wRect[1][0] + "," + wRect[1][1] + " / " + wRect[2][0] + "," + wRect[2][1] + " / " + wRect[3][0] + "," + wRect[3][1] + "\n\n");			
+				List<Points> validPoints = new ArrayList<Points>();
+						
+				for(int ws = 0; ws < wRect.length; ws++)
+				{
+					Points p = new Points(wRect[ws][0], wRect[ws][1]);
+					
+					if(room.containsPoint(p.x, p.y, (ROOM_TOLERANCE * w.getThickness())))
+						validPoints.add(p);
+				}
+				
+				JOptionPane.showMessageDialog(null, validPoints.size());
+						
+				float[][] validRect = new float[validPoints.size()][2];
+				
+				for(int i = 0; i < validPoints.size(); i++)
+				{
+					validRect[i][0] = validPoints.get(i).x;
+					validRect[i][1] = validPoints.get(i).y;
+				}
+				
+				furnRects.add(validRect);
+				furnThicks.add(w.getThickness());		
+							
 				wallCount++;
 			}
-			
-			//JOptionPane.showMessageDialog(null, furnRect);
 		}
 		
 		
