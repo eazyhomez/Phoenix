@@ -83,15 +83,15 @@ public class PhoenixPathway extends Plugin
 				long startTime = System.nanoTime();
 				
 				// ===================================================== //
-				/*				
-				Points centerP = new Points(100.0f, 300.0f);
+							
+				Points centerP = new Points(200.0f, 400.0f);
 				float radius = 141.4f;
 				
-				Points startLine = new Points(-100.0f, 220.0f);
-				Points endLine = new Points(300.0f, 200.0f);
+				Points startLine = new Points(-100.0f, 300.0f);
+				Points endLine = new Points(500.0f, 300.0f);
 				
 				List<Points> intList = getIntersectionCircleLine(centerP, radius, startLine, endLine);
-				*/
+				
 				
 				// ===================================================== //		
 				/*
@@ -139,7 +139,7 @@ public class PhoenixPathway extends Plugin
 				List<Points> interP = getIntersectionArcLineSeg(centerP, radius, startLine, endLine, pArc1, pArc2);
 				*/
 				// ===================================================== //	
-				
+				/*
 				double MAX_ANGLE = (180 * (float)(Math.PI/180));
 				double ANGLE_ADJUSTMENT = -(20 * (float)(Math.PI/180));
 				
@@ -188,13 +188,13 @@ public class PhoenixPathway extends Plugin
 						putMarkers(inter, false);
 					}									
 				}
-				
+				*/
 				// ===================================================== //	
 				
 				long endTime = System.nanoTime();
 				
-				putMarkers(pArc1, true);
-				putMarkers(pArc2, true);
+				//putMarkers(pArc1, true);
+				//putMarkers(pArc2, true);
 				
 				//putMarkers(minInter, true);
 				
@@ -234,17 +234,25 @@ public class PhoenixPathway extends Plugin
 			{	
 				if(endL.x == startL.x)
 				{
-					float x01 = center.x;
-					float y01 = center.y - rad;
-					
-					Points inter1 = new Points(x01, y01);
-					interList.add(inter1);
-					
-					float x02 = center.x;
-					float y02 = center.y + rad;
-					
-					Points inter2 = new Points(x02, y02);
-					interList.add(inter2);
+					float dist = (float) Math.abs(startL.x - center.x);
+							
+					if(dist <= rad)
+					{
+						float x01 = startL.x;
+						float y01 = center.y - (float)Math.sqrt((rad*rad) - (dist*dist));
+						
+						Points inter1 = new Points(x01, y01);
+						interList.add(inter1);
+						//putMarkers(inter1, false);
+						
+						float x02 = startL.x;
+						float y02 = center.y + (float)Math.sqrt((rad*rad) - (dist*dist));
+						
+						Points inter2 = new Points(x02, y02);
+						interList.add(inter2);
+						//putMarkers(inter2, false);
+					}
+					//else : Line does not intersect with this circle
 				}
 				else
 				{
