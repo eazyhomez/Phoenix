@@ -8,6 +8,8 @@ import java.util.TreeMap;
 
 import javax.swing.JOptionPane;
 
+import org.omg.CORBA.Request;
+
 import com.eteks.sweethome3d.model.CatalogPieceOfFurniture;
 import com.eteks.sweethome3d.model.FurnitureCategory;
 import com.eteks.sweethome3d.model.Home;
@@ -137,6 +139,18 @@ public class PhoenixPathway extends Plugin
 					count++;
 				}
 				
+				dbgStr += "\n--------------------------------------\n\n";
+						
+				float newArcLength = 50.0f;
+				
+				List<LineSegement> newArcSegList = generateNextArcSegs(arcSegList, newArcLength);
+				
+				for(LineSegement ls : newArcSegList)
+				{
+					dbgStr += (count + ": " + ls.startP.x + ", " + ls.startP.y + " -> " + ls.endP.x + ", " + ls.endP.y + "\n");
+					count++;
+				}
+				
 				JOptionPane.showMessageDialog(null, dbgStr);
 				
 				//==========================================
@@ -225,6 +239,38 @@ public class PhoenixPathway extends Plugin
 			return retPList;
 		}
 		
+		public List<LineSegement> generateNextArcSegs(List<LineSegement> freeArcSegList, float reqLength)
+		{
+			List<LineSegement> retLSList = new ArrayList<LineSegement>();
+			
+			for(int f = 0; f < freeArcSegList.size(); f++)
+			{
+				LineSegement ls = freeArcSegList.get(f);
+				
+				int iter = new Float(calcDistance(ls.startP, ls.endP) / reqLength).intValue();
+				
+				Points prevPoint = ls.startP;
+				
+				for(int i = 0; i < iter; i++)
+				{
+					List<Points> interP = getIntersectionCircleLine(ls.startP, (reqLength *(i+1)), ls.startP, ls.endP);
+					
+					for(Points p : interP)
+					{
+						boolean bInBetween = checkPointInBetween(p, ls.startP, ls.endP, tolerance);
+						
+						if(bInBetween)
+						{
+							retLSList.add(new LineSegement(prevPoint, p));
+							prevPoint = p;
+						}
+					}
+				}				
+			}
+			
+			return retLSList;
+		}
+		
 		public List<LineSegement> generateFreeArcSegs(Points center, Points pArc1, Points pArc2, float rad)
 		{
 			List<LineSegement> arcSegList = new ArrayList<LineSegement>();
@@ -272,8 +318,7 @@ public class PhoenixPathway extends Plugin
 			}
 			
 			return arcSegList;
-			//JOptionPane.showMessageDialog(null, bCheckP1);
-			
+			//JOptionPane.showMessageDialog(null, bCheckP1);			
 		}
 		
 		public List<Points> getIntersectionInHome(Points center, Points pArc1, Points pArc2, float rad)
@@ -309,7 +354,7 @@ public class PhoenixPathway extends Plugin
 				}
 			}
 			
-			JOptionPane.showMessageDialog(null, "1 :" +  bIsInside);
+			//JOptionPane.showMessageDialog(null, "1 :" +  bIsInside);
 			
 			if(!bIsInside)
 			{
@@ -324,7 +369,7 @@ public class PhoenixPathway extends Plugin
 					}
 				}
 				
-				JOptionPane.showMessageDialog(null, "2 :" +  bIsInside);
+				//JOptionPane.showMessageDialog(null, "2 :" +  bIsInside);
 			}
 			
 			if(!bIsInside)
@@ -336,7 +381,7 @@ public class PhoenixPathway extends Plugin
 					bIsInside = true;
 				}
 				
-				JOptionPane.showMessageDialog(null, "3 :" +  bIsInside);
+				//JOptionPane.showMessageDialog(null, "3 :" +  bIsInside);
 			}
 				
 			return bIsInside;
