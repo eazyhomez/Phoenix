@@ -116,13 +116,11 @@ public class PhoenixPathway extends Plugin
 				boolean bInBetween = checkPointInBetween(a, startLine, endLine, tolerance);
 				*/
 				// ===================================================== //	
-				
+				/*
 				String debugStr = "";
 				
 				double MAX_ANGLE = (180 * (float)(Math.PI/180));
 				double ANGLE_ADJUSTMENT = -(20 * (float)(Math.PI/180));
-				
-				float tolerance = 0.50f; // 5 mm 
 				
 				Points centerP = new Points(100.0f, 300.0f);
 				float radius = 141.4f;
@@ -133,27 +131,72 @@ public class PhoenixPathway extends Plugin
 				float aX1 = centerP.x + (radius * (float)(Math.cos(ANGLE_ADJUSTMENT)));
 				float aY1 = centerP.y + (radius * (float)(Math.sin(ANGLE_ADJUSTMENT)));
 				Points pArc1 = new Points(aX1, aY1);
-				putMarkers(pArc1, true);
-				
-				debugStr += ("x:" + pArc1.x + ", y:" + pArc1.y + "\n");
 				
 				float aX2 = centerP.x + (radius * (float)(Math.cos(MAX_ANGLE - ANGLE_ADJUSTMENT)));
 				float aY2 = centerP.y + (radius * (float)(Math.sin(MAX_ANGLE - ANGLE_ADJUSTMENT)));
-				Points pArc2 = new Points(aX2, aY2);			
-				putMarkers(pArc2, true);
-				
-				debugStr += ("x:" + pArc2.x + ", y:" + pArc2.y + "\n");
+				Points pArc2 = new Points(aX2, aY2);
 				
 				List<Points> interP = getIntersectionArcLineSeg(centerP, radius, startLine, endLine, pArc1, pArc2);
+				*/
+				// ===================================================== //	
+				
+				double MAX_ANGLE = (180 * (float)(Math.PI/180));
+				double ANGLE_ADJUSTMENT = -(20 * (float)(Math.PI/180));
+				
+				Points centerP = new Points(200.0f, 400.0f);
+				float radius = 141.4f;
+				
+				List<LineSegement> lsList = new ArrayList<LineSegement>();
+				Points minInter = null;
+				
+				Points startLine1 = new Points(0.0f, 300.0f);
+				Points endLine1 = new Points(400.0f, 300.0f);
+				LineSegement ls1 = new LineSegement(startLine1, endLine1);
+				lsList.add(ls1);
+				
+				Points startLine2 = new Points(400.0f, 300.0f);
+				Points endLine2 = new Points(420.0f, 320.0f);
+				LineSegement ls2 = new LineSegement(startLine2, endLine2);
+				lsList.add(ls2);
+				
+				Points startLine3 = new Points(420.0f, 320.0f);
+				Points endLine3 = new Points(-20.0f, 320.0f);
+				LineSegement ls3 = new LineSegement(startLine3, endLine3);
+				lsList.add(ls3);
+				
+				Points startLine4 = new Points(-20.0f, 320.0f);
+				Points endLine4 = new Points(0.0f, 300.0f);
+				LineSegement ls4 = new LineSegement(startLine4, endLine4);
+				lsList.add(ls4);
+				
+				float aX1 = centerP.x + (radius * (float)(Math.cos(ANGLE_ADJUSTMENT)));
+				float aY1 = centerP.y + (radius * (float)(Math.sin(ANGLE_ADJUSTMENT)));
+				Points pArc1 = new Points(aX1, aY1);
+				
+				float aX2 = centerP.x + (radius * (float)(Math.cos(MAX_ANGLE - ANGLE_ADJUSTMENT)));
+				float aY2 = centerP.y + (radius * (float)(Math.sin(MAX_ANGLE - ANGLE_ADJUSTMENT)));
+				Points pArc2 = new Points(aX2, aY2);
+				
+				//float minDist = 10000.0f;
+				
+				for(int l = 0; l < lsList.size(); l++)
+				{
+					List<Points> interP = getIntersectionArcLineSeg(centerP, radius, lsList.get(l).startP, lsList.get(l).endP, pArc1, pArc2);
+					
+					for(Points inter : interP)
+					{						
+						putMarkers(inter, false);
+					}									
+				}
 				
 				// ===================================================== //	
 				
 				long endTime = System.nanoTime();
 				
-				for(Points p : interP)
-				{
-					putMarkers(p, false);
-				}
+				putMarkers(pArc1, true);
+				putMarkers(pArc2, true);
+				
+				//putMarkers(minInter, true);
 				
 				JOptionPane.showMessageDialog(null, "Time : " + (endTime - startTime) + " ns \n");
 				
@@ -181,8 +224,7 @@ public class PhoenixPathway extends Plugin
 			}		
 			
 			return retList;
-		}
-		
+		}		
 		
 		public List<Points> getIntersectionCircleLine(Points center, float rad, Points startL, Points endL)
 		{
