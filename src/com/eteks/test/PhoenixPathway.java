@@ -129,14 +129,13 @@ public class PhoenixPathway extends Plugin
 				Points sP2 = new Points(startPoints[2], startPoints[3]);
 				
 				Points centerP = new Points(((sP1.x + sP2.x)/2), ((sP1.y + sP2.y)/2));
-				putMarkers(centerP, 1);				
+				//putMarkers(centerP, 1);				
 				
 				List<LineSegement> newSegList = runFirstLoop(centerP, radius, sP1, sP2, padding, newArcLength);
 				masterNewSegList.add(newSegList);
 				
 				int loopCount = 0;				
 
-				//while(loopCount < 2)
 				while(!bStop)
 				{
 					loopCount++;
@@ -173,6 +172,9 @@ public class PhoenixPathway extends Plugin
 					masterNewSegList = nxtMasterNewSegList;
 				}
 				
+				masterNewSegList = new ArrayList<List<LineSegement>>();
+				bStop = false;
+				
 				// ===================================================== //	
 				
 				long endTime = System.nanoTime();
@@ -198,8 +200,8 @@ public class PhoenixPathway extends Plugin
 				Points arcP1 = arcP.get(0);
 				Points arcP2 = arcP.get(1);
 				
-				putMarkers(arcP1, 0);
-				putMarkers(arcP2, 0);
+				//putMarkers(arcP1, 0);
+				//putMarkers(arcP2, 0);
 				
 				List<LineSegement> arcSegList = generateFreeArcSegs(centerP, arcP1, arcP2, rad);
 				
@@ -229,7 +231,7 @@ public class PhoenixPathway extends Plugin
 			Points sP2 = new Points(ls.endP.x, ls.endP.y);
 			
 			Points centerP = new Points(((sP1.x + sP2.x)/2), ((sP1.y + sP2.y)/2));
-			putMarkers(centerP, 2);	
+			//putMarkers(centerP, 2);	
 			
 			List<Points> arcP = generateNextArcPoints(sP1, sP2, rad, h, prevCenter);
 			
@@ -373,10 +375,10 @@ public class PhoenixPathway extends Plugin
 			List<Points> interPList = getIntersectionInHome(center, pArc1, pArc2, rad);
 			//List<Points> interPList = getIntersectionInHomeWithDiningCheck(center, pArc1, pArc2, rad);
 			
-			for(Points p : interPList)
+			/*for(Points p : interPList)
 			{
 				putMarkers(p, 3);
-			}
+			}*/
 						
 			boolean bInDining = checkDining(interPList);
 			
