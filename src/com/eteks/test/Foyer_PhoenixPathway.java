@@ -1,7 +1,10 @@
 package com.eteks.test;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
+import java.util.TreeMap;
 
 import javax.swing.JOptionPane;
 
@@ -36,12 +39,13 @@ public class PhoenixPathway extends Plugin
 		public HomePieceOfFurniture entryDoor = null;
 		
 		public float ROOM_TOLERANCE = 0.51f;
+		public float FURN_TOLERANCE = 0.51f;
+		
 		public double MAX_ANGLE = (180 * (float)(Math.PI/180));
 		public double ANGLE_ADJUSTMENT = -(20 * (float)(Math.PI/180));
 		
-		public float radius = 141.40f; //200.0f;		// for testing intersection of circles
+		public float radius = 75.0f;		
 		public float tolerance = 0.5f; // 5 mm
-		public float newArcLength = 50.0f;
 		
 		// ======================= CLASSES ======================= //
 		
@@ -63,6 +67,18 @@ public class PhoenixPathway extends Plugin
 			Points endP;		// x, y
 			
 			public LineSegement(Points sP, Points eP)
+			{
+				startP = sP;
+				endP = eP;
+			}
+		}
+		
+		public class ArcSegement
+		{
+			Points startP;		// x, y
+			Points endP;		// x, y
+			
+			public ArcSegement(Points sP, Points eP)
 			{
 				startP = sP;
 				endP = eP;
@@ -94,61 +110,59 @@ public class PhoenixPathway extends Plugin
 				
 				// ===================================================== //	
 				
-				//Points centerP = getStartingPoints();
-				//List<Points> interPList = getIntersectionInHome(centerP, radius, ANGLE_ADJUSTMENT);				
-				/*
-				Points p1 = new Points(0.0f, 0.0f);
-				putMarkers(p1, false);
-				
-				Points p21 = new Points(100.0f, -100.0f);
-				putMarkers(p21, true);
-				String debugStr = "" + getStartAngle(p1, p21);
-				
-				debugStr += "\n" + getStartAngle(p21, p1) + "\n------\n";
-				
-				Points p22 = new Points(-100.0f, -100.0f);
-				putMarkers(p22, true);
-				debugStr += "" + getStartAngle(p1, p22);
-				
-				debugStr += "\n" + getStartAngle(p22, p1) + "\n------\n";
-				
-				Points p23 = new Points(-100.0f, 100.0f);
-				putMarkers(p23, true);
-				debugStr += "" + getStartAngle(p1, p23);
-				
-				debugStr += "\n" + getStartAngle(p23, p1) + "\n------\n";
-				
-				Points p24 = new Points(100.0f, 100.0f);
-				putMarkers(p24, true);
-				debugStr += "" + getStartAngle(p1, p24);
-				
-				debugStr += "\n" + getStartAngle(p24, p1) + "\n------\n";
-
-				JOptionPane.showMessageDialog(null, debugStr);
-				*/		
-				
-				// ===================================================== //	
-				/*
 				float[] startPoints = getStartingPoints();
 				
 				Points sP1 = new Points(startPoints[0], startPoints[1]);
 				Points sP2 = new Points(startPoints[2], startPoints[3]);
 				
 				Points centerP = new Points(((sP1.x + sP2.x)/2), ((sP1.y + sP2.y)/2));
-				putMarkers(centerP, false);
+				putMarkers(centerP, true);
 				
-				float padding = 15.2f;
+				float padding = 15.2f;				
 				
 				List<Points> arcP = generateStartArcPoints(sP1, sP2, radius, padding);
 				
-				if(arcP.size() > 1)
-				{
-					putMarkers(arcP.get(0), true);
-					putMarkers(arcP.get(1), true);
-				}
-				*/
-				//JOptionPane.showMessageDialog(null, arcP.size());
+				Points arcP1 = arcP.get(0);
+				Points arcP2 = arcP.get(1);
+				putMarkers(arcP1, true);
 				
+				List<LineSegement> arcSegList = generateFreeArcSegs(centerP, arcP1, arcP2, radius);
+				
+				String dbgStr = "";
+				int count = 1;
+				
+				for(LineSegement ls : arcSegList)
+				{
+					dbgStr += (count + ": " + ls.startP.x + ", " + ls.startP.y + " -> " + ls.endP.x + ", " + ls.endP.y + "\n");
+					count++;
+				}
+				
+				JOptionPane.showMessageDialog(null, dbgStr);
+				
+				//==========================================
+				/*
+				Points startL = new Points(300.0f, 200.0f);
+				Points endL = new Points(460.0f, 200.0f);
+				
+				List<Points> interP = getIntersectionArcLineSeg(centerP, radius, startL, endL, arcP1, arcP2);
+				
+				String dbgStr = "";
+				
+				for(Points p : interP)
+				{
+					boolean bInBetween = checkPointInBetween(p, startL, endL, tolerance);
+					dbgStr += p.x + ", " + p.y + "\n"+ bInBetween +"\n\n";
+				}
+				
+				JOptionPane.showMessageDialog(null, dbgStr);
+				*/
+				/* =============================
+
+				
+				generateFreeArcSegs(centerP, arcP1, arcP2, radius);
+				*/
+				
+				//JOptionPane.showMessageDialog(null, arcP.size());
 				
 				// ===================================================== //	
 				/*
@@ -171,25 +185,8 @@ public class PhoenixPathway extends Plugin
 					putMarkers(nxtArcP.get(1), false);
 				}
 				*/
+				
 				// ===================================================== //	
-				
-				
-				//float[] startPoints = getStartingPoints();
-				
-				Points sP1 = new Points(-100.0f, 2.0f); //new Points(startPoints[0], startPoints[1]);
-				Points sP2 = new Points(100.0f, 2.0f); //new Points(startPoints[2], startPoints[3]);
-				
-				Points centerP = new Points(0.0f, 0.0f);
-				putMarkers(centerP, true);
-				
-				//List<Points> interPlist = getIntersectionArcCircle(sP1, radius, sP1, sP2, centerP, newArcLength);
-				
-				List<Points> interPlist = getIntersectionArcCircle(sP1, radius, sP1, sP2, centerP, newArcLength);
-				
-				//for(Points p : interPlist)
-				//{
-					//putMarkers(p, false);
-				//}
 				
 				long endTime = System.nanoTime();
 				
@@ -207,6 +204,149 @@ public class PhoenixPathway extends Plugin
 			}
 		}
 		
+		public List<Points> sortPList(List<Points> interPList, Points ref)
+		{
+			List<Points> retPList = new ArrayList<Points>();
+			TreeMap<Float, Points> pMap = new TreeMap<Float, Points>();
+			
+			for(Points p : interPList)
+			{
+				float dist = calcDistance(p, ref);
+				pMap.put(dist, p);
+			}
+			
+			Set<Float> keys = pMap.keySet();
+			
+			for(Float d : keys)
+			{
+				retPList.add(pMap.get(d));
+			}
+					
+			return retPList;
+		}
+		
+		public List<LineSegement> generateFreeArcSegs(Points center, Points pArc1, Points pArc2, float rad)
+		{
+			List<LineSegement> arcSegList = new ArrayList<LineSegement>();
+			List<Points> interPList = getIntersectionInHome(center, pArc1, pArc2, rad);
+			
+			for(Points p : interPList)
+			{
+				putMarkers(p, false);
+			}
+			
+			List<Points> sortedPList = sortPList(interPList, pArc1);
+			
+			List<Points> checkPList = new ArrayList<Points>();
+			checkPList.add(pArc1);
+			checkPList.addAll(sortedPList);
+			checkPList.add(pArc2);		
+			
+			//for(Points p : checkPList)
+			//{
+				//putMarkers(p, false);
+			//}
+			
+			boolean bCheckP1 = checkPointBlocked(pArc1);
+					
+			if(bCheckP1)
+			{
+				for(int x = 1; (x+1) < checkPList.size();)
+				{
+					LineSegement freeAS = new LineSegement(checkPList.get(x), checkPList.get(x+1));
+					arcSegList.add(freeAS);
+					
+					//putMarkers(checkPList.get(x), true);
+					//putMarkers(checkPList.get(x+1), true);
+					
+					x += 2;
+				}
+			}
+			else
+			{
+				for(int x = 0; (x+1) < checkPList.size();)
+				{
+					LineSegement freeAS = new LineSegement(checkPList.get(x), checkPList.get(x+1));
+					arcSegList.add(freeAS);
+					
+					//putMarkers(checkPList.get(x), false);
+					//putMarkers(checkPList.get(x+1), false);
+					
+					x += 2;
+				}
+			}
+			
+			return arcSegList;
+			//JOptionPane.showMessageDialog(null, bCheckP1);
+			
+		}
+		
+		public List<Points> getIntersectionInHome(Points center, Points pArc1, Points pArc2, float rad)
+		{		
+			List<Points> interPList = new ArrayList<Points>();	
+			
+			for( float[][] fRects : furnRects)
+			{
+				List<Points> intList = getIntersectionArcRectangle(center, radius, fRects, pArc1, pArc2, tolerance);
+				interPList.addAll(intList);
+			}
+			
+			return interPList;
+		}
+		
+		public boolean checkPointBlocked(Points test)
+		{
+			boolean bIsInside = false;
+			
+			for(HomePieceOfFurniture hpf : home.getFurniture())
+			{
+				String fName = hpf.getName();
+				
+				if(!fName.equals("boxred") && !fName.equals("boxgreen") )
+				{
+					boolean bCheck1 = hpf.containsPoint(test.x, test.y, FURN_TOLERANCE);
+					
+					if(bCheck1)
+					{
+						bIsInside = true;
+						break;
+					}
+				}
+			}
+			
+			JOptionPane.showMessageDialog(null, "1 :" +  bIsInside);
+			
+			if(!bIsInside)
+			{
+				for(Wall w : home.getWalls())
+				{
+					boolean bCheck2 = w.containsPoint(test.x, test.y, FURN_TOLERANCE);
+					
+					if(bCheck2)
+					{
+						bIsInside = true;
+						break;
+					}
+				}
+				
+				JOptionPane.showMessageDialog(null, "2 :" +  bIsInside);
+			}
+			
+			if(!bIsInside)
+			{
+				boolean bCheck3 = room.containsPoint(test.x, test.y, ROOM_TOLERANCE);
+			
+				if(!bCheck3)
+				{
+					bIsInside = true;
+				}
+				
+				JOptionPane.showMessageDialog(null, "3 :" +  bIsInside);
+			}
+				
+			return bIsInside;
+		}
+		/*
 		public List<Points> getIntersectionInHome(Points center, float rad, double angAdjust)
 		{
 			float aX1 = center.x + (radius * (float)(Math.cos(angAdjust)));
@@ -227,6 +367,7 @@ public class PhoenixPathway extends Plugin
 			
 			return interPList;
 		}
+		*/
 		
 		public List<Points> getIntersectionArcRectangle(Points center, float rad, float[][] furnRect, Points arcP1, Points arcP2, float tolerance)
 		{
@@ -235,19 +376,30 @@ public class PhoenixPathway extends Plugin
 			
 			//JOptionPane.showMessageDialog(null,("furn : " + furnRect[0][0] + "," + furnRect[0][1] + " / " + furnRect[1][0] + "," + furnRect[1][1] + " / " + furnRect[2][0] + "," + furnRect[2][1] + " / " + furnRect[3][0] + "," + furnRect[3][1]));
 			
-			for(int f = 0; f < furnRect.length; f++)
+			if(furnRect.length == 2)
 			{
-				Points startLine = new Points(furnRect[f][0], furnRect[f][1]);
-				
-				Points endLine = null;
-				
-				if(f == (furnRect.length - 1))
-					endLine = new Points(furnRect[0][0], furnRect[0][1]);
-				else
-					endLine = new Points(furnRect[f+1][0], furnRect[f+1][1]);				
+				Points startLine = new Points(furnRect[0][0], furnRect[0][1]);
+				Points endLine = new Points(furnRect[1][0], furnRect[1][1]);
 				
 				LineSegement ls = new LineSegement(startLine, endLine);
 				lsList.add(ls);
+			}
+			else
+			{			
+				for(int f = 0; f < furnRect.length; f++)
+				{
+					Points startLine = new Points(furnRect[f][0], furnRect[f][1]);
+					
+					Points endLine = null;
+					
+					if(f == (furnRect.length - 1))
+						endLine = new Points(furnRect[0][0], furnRect[0][1]);
+					else
+						endLine = new Points(furnRect[f+1][0], furnRect[f+1][1]);				
+					
+					LineSegement ls = new LineSegement(startLine, endLine);
+					lsList.add(ls);
+				}
 			}
 			
 			for(int l = 0; l < lsList.size(); l++)
@@ -263,8 +415,8 @@ public class PhoenixPathway extends Plugin
 					
 					if(bInBetween)
 					{
-						retList.addAll(interP);
-						putMarkers(inter, false);
+						retList.add(inter);
+						//putMarkers(inter, false);
 					}
 					//else
 						//putMarkers(inter, true);
@@ -290,60 +442,6 @@ public class PhoenixPathway extends Plugin
 			
 			return retList;
 		}		
-		
-		public List<Points> getIntersectionArcCircle(Points centerC, float radC, Points arcP1, Points arcP2, Points centerArc, float arcLength)
-		{
-			List<Points> retList = new ArrayList<Points>();
-			
-			List<Points> interList = getIntersectionTwoCircle(centerC, radC, arcP1, arcP2, centerArc, arcLength);
-			
-			for(Points p : interList)
-			{
-				boolean bOnSameSide = checkPointOnSameSide(centerArc, p, arcP1, arcP2);
-				
-				if(!bOnSameSide)
-				{
-					retList.add(p);
-					putMarkers(p, true);
-				}
-				
-				putMarkers(p, false);
-			}		
-			
-			return retList;
-		}
-		
-		
-		public List<Points> getIntersectionTwoCircle(Points centerC, float radC, Points arcP1, Points arcP2, Points centerArc, float radArc)
-		{
-			List<Points> retList = new ArrayList<Points>();
-			
-			float dist = Math.abs(calcDistance(centerC, centerArc));
-			float diffR = Math.abs(radC - radArc);
-			float sumR = Math.abs(radC + radArc);
-			
-			// If circles intersect, compute the points of intersection
-			if((dist >= diffR) && (dist <= sumR))
-			{
-				float d = (float)Math.sqrt(((centerC.x - centerArc.x)*(centerC.x - centerArc.x)) + ((centerC.y - centerArc.y)*(centerC.y - centerArc.y)));
-				float l = ((radC*radC) - (radArc*radArc) + (d*d)) / (2*d);
-				float h = (float)Math.sqrt((radC*radC) - (l*l));
-				
-				float x1 = ((l/d)*(centerArc.x - centerC.x)) + ((h/d)*(centerArc.y - centerC.y)) + centerC.x;
-				float y1 = ((l/d)*(centerArc.y - centerC.y)) - ((h/d)*(centerArc.x - centerC.x)) + centerC.y;			
-				Points inter1 = new Points(x1, y1);
-				retList.add(inter1);
-				
-				float x2 = ((l/d)*(centerArc.x - centerC.x)) - ((h/d)*(centerArc.y - centerC.y)) + centerC.x;
-				float y2 = ((l/d)*(centerArc.y - centerC.y)) + ((h/d)*(centerArc.x - centerC.x)) + centerC.y;
-				Points inter2 = new Points(x2, y2);
-				retList.add(inter2);		
-			}
-			//else
-				//JOptionPane.showMessageDialog(null, "Doesn't intersect");
-			
-			return retList;
-		}
 		
 		public List<Points> getIntersectionCircleLine(Points center, float rad, Points startL, Points endL)
 		{
@@ -734,7 +832,7 @@ public class PhoenixPathway extends Plugin
 				bIsInside = (bIsInside && bCheck);
 			}
 			
-			JOptionPane.showMessageDialog(null, bIsInside + " -> " + test.x + ", " + test.y);
+			//JOptionPane.showMessageDialog(null, bIsInside + " -> " + test.x + ", " + test.y);
 			
 			return bIsInside;			
 			//return room.containsPoint(test.x, test.y, ROOM_TOLERANCE);
