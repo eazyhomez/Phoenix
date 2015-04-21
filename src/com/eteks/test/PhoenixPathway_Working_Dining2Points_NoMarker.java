@@ -28,8 +28,9 @@ public class PhoenixPathway extends Plugin
 	
 	public List<float[][]> furnRectsBloated = new ArrayList<float[][]>();
 	
-	public List<String> markBoxName = new ArrayList<String>();
 	//public List<HomePieceOfFurniture> furnList = new ArrayList<HomePieceOfFurniture>();
+	
+	public HomePieceOfFurniture[] markBoxes = new HomePieceOfFurniture[4];
 	
 	public class RoomTestAction extends PluginAction 
 	{		
@@ -44,26 +45,15 @@ public class PhoenixPathway extends Plugin
 		public float ROOM_TOLERANCE = 0.51f;
 		public float FURN_TOLERANCE = 0.51f;
 		
-		public float DINING_DISTANCE = 75.0f;  // 2 feet
+		public float DINING_DISTANCE = 76.2f;  // 2.5 feet
 		
 		public double MAX_ANGLE = (180 * (float)(Math.PI/180));
 		public double ANGLE_ADJUSTMENT = -(20 * (float)(Math.PI/180));
 		
 		public float radius = 75.0f;		
-		public float tolerance = 0.5f; // 5 mm
+		public float tolerance = 20.0f; // 5 mm
 		
-		public boolean bStop = false;		
-		
-		public List<List<List<LineSegement>>> supMasterNewSegList = new ArrayList<List<List<LineSegement>>>();
-		
-		public int masterListIndx = 0;
-		public int listIndx = 0;
-		public int currSegIndx = 0;
-		
-		public int MARKBOX_COUNT = 6;
-		public HomePieceOfFurniture[] markBoxes = new HomePieceOfFurniture[MARKBOX_COUNT];
-		
-		public boolean bShowMarker = true;
+		public boolean bStop = false;
 		
 		// ======================= CLASSES ======================= //
 		
@@ -83,8 +73,6 @@ public class PhoenixPathway extends Plugin
 		{
 			Points startP;		// x, y
 			Points endP;		// x, y
-			Points parent;		// x, y
-			int[] parentIndex;
 			
 			public LineSegement(Points sP, Points eP)
 			{
@@ -141,38 +129,23 @@ public class PhoenixPathway extends Plugin
 				Points sP2 = new Points(startPoints[2], startPoints[3]);
 				
 				Points centerP = new Points(((sP1.x + sP2.x)/2), ((sP1.y + sP2.y)/2));
-				
-				if(bShowMarker)
-					putMarkers(centerP, 1);				
-				
-				masterListIndx = 0;
-				listIndx = 0;
-				currSegIndx = 0;
+				//putMarkers(centerP, 1);				
 				
 				List<LineSegement> newSegList = runFirstLoop(centerP, radius, sP1, sP2, padding, newArcLength);
 				masterNewSegList.add(newSegList);
-				supMasterNewSegList.add(masterNewSegList);
 				
 				int loopCount = 0;				
 
 				while(!bStop)
-				//while(loopCount < 2)	
 				{
 					loopCount++;
 					
 					List<List<LineSegement>> nxtMasterNewSegList = new ArrayList<List<LineSegement>>();
 					
-					listIndx = -1;
-					
 					for(List<LineSegement> lsList : masterNewSegList)
-					{	
-						listIndx++;
-						currSegIndx = -1;
-						
+					{						
 						for(LineSegement ls : lsList)
 						{
-							currSegIndx++;
-							
 							Points midP = new Points(((ls.startP.x + ls.endP.x)/2), ((ls.startP.y + ls.endP.y)/2));
 							
 							boolean bInRoom = room.containsPoint(midP.x, midP.y, ROOM_TOLERANCE);
@@ -197,21 +170,14 @@ public class PhoenixPathway extends Plugin
 						break;
 					
 					masterNewSegList = nxtMasterNewSegList;
-					supMasterNewSegList.add(masterNewSegList);
-					
-					masterListIndx = loopCount;
 				}
-				
-				// ===================================================== //	
-				
-				long endTime = System.nanoTime();
-				
-				
-				generatePathwayTrace();
 				
 				masterNewSegList = new ArrayList<List<LineSegement>>();
 				bStop = false;
 				
+				// ===================================================== //	
+				
+				long endTime = System.nanoTime();
 				
 				JOptionPane.showMessageDialog(null, "Time : " + (endTime - startTime) + " ns \n loopCount : " + loopCount);
 				
@@ -220,28 +186,6 @@ public class PhoenixPathway extends Plugin
 			{
 				JOptionPane.showMessageDialog(null," -x-x-x- EXCEPTION : " + e.getMessage()); 
 				e.printStackTrace();
-			}
-		}
-		
-		public void generatePathwayTrace()
-		{
-			LineSegement ls = supMasterNewSegList.get(masterListIndx).get(listIndx).get(currSegIndx);
-			//putMarkers(ls.parent, 4);
-			
-			while(ls != null)
-			{
-				if(bShowMarker)
-					putMarkers(ls.parent, 4);				
-				
-				int[] indx = ls.parentIndex;
-				
-				if((indx[0] == 0) && (indx[1] == 0) && (indx[2] == 0))
-					break;
-				
-				if(indx[0] > supMasterNewSegList.size())
-					continue;
-				
-				ls = supMasterNewSegList.get(indx[0]).get(indx[1]).get(indx[2]);
 			}
 		}
 		
@@ -256,11 +200,8 @@ public class PhoenixPathway extends Plugin
 				Points arcP1 = arcP.get(0);
 				Points arcP2 = arcP.get(1);
 				
-				if(bShowMarker)
-					putMarkers(arcP1, 0);
-				
-				if(bShowMarker)
-					putMarkers(arcP2, 0);
+				//putMarkers(arcP1, 0);
+				//putMarkers(arcP2, 0);
 				
 				List<LineSegement> arcSegList = generateFreeArcSegs(centerP, arcP1, arcP2, rad);
 				
@@ -268,6 +209,12 @@ public class PhoenixPathway extends Plugin
 				{
 					if(arcSegList.size() > 0)
 					{
+						/*for(LineSegement ls : arcSegList)
+						{
+							Points mp = new Points(((ls.startP.x + ls.endP.x)/2), ((ls.startP.y + ls.endP.y)/2));
+							putMarkers(mp, 2);
+						}*/
+						
 						newArcSegList = generateNextArcSegs(arcSegList, newArcLength);
 					}
 				}
@@ -284,9 +231,7 @@ public class PhoenixPathway extends Plugin
 			Points sP2 = new Points(ls.endP.x, ls.endP.y);
 			
 			Points centerP = new Points(((sP1.x + sP2.x)/2), ((sP1.y + sP2.y)/2));
-			
-			if(bShowMarker)
-				putMarkers(centerP, 2);	
+			//putMarkers(centerP, 2);	
 			
 			List<Points> arcP = generateNextArcPoints(sP1, sP2, rad, h, prevCenter);
 			
@@ -304,6 +249,12 @@ public class PhoenixPathway extends Plugin
 				{
 					if(arcSegList.size() > 0)
 					{
+						/*for(LineSegement nls : arcSegList)
+						{
+							Points mp = new Points(((nls.startP.x + nls.endP.x)/2), ((nls.startP.y + nls.endP.y)/2));
+							putMarkers(mp, 2);
+						}*/
+						
 						newArcSegList = generateNextArcSegs(arcSegList, newArcLen);	
 					}
 				}
@@ -313,6 +264,7 @@ public class PhoenixPathway extends Plugin
 		}
 		
 		
+		// TODO : Check for the distance between intersection points
 		public boolean checkDining(List<Points> inPList)
 		{
 			boolean bRet = false;
@@ -330,28 +282,9 @@ public class PhoenixPathway extends Plugin
 					if(count >= 2)
 					{
 						bRet = true;
-						
-						if(bShowMarker)
-							putMarkers(p, 4);
-						
 						break;
 					}
 				}
-				
-				/*
-				if(inPList.size() > 1)
-				{
-					Points sP = inPList.get(0);
-					Points eP = inPList.get(inPList.size() - 1);
-					
-					float d = calcDistance(sP, eP);
-					
-					if(d >= DINING_DISTANCE)
-					{
-						bRet = true;
-					}
-				}
-				*/
 			}
 			
 			return bRet;
@@ -424,14 +357,8 @@ public class PhoenixPathway extends Plugin
 						
 						if(bInBetween)
 						{
-							LineSegement freeLS = new LineSegement(prevPoint, p);
-							freeLS.parent = ls.parent;
-							freeLS.parentIndex = collectParentIndexes();
-							retLSList.add(freeLS);
-							
-							//retLSList.add(new LineSegement(prevPoint, p));							
+							retLSList.add(new LineSegement(prevPoint, p));
 							prevPoint = p;
-							
 							//putMarkers(p, 1);
 						}
 					}
@@ -448,13 +375,10 @@ public class PhoenixPathway extends Plugin
 			List<Points> interPList = getIntersectionInHome(center, pArc1, pArc2, rad);
 			//List<Points> interPList = getIntersectionInHomeWithDiningCheck(center, pArc1, pArc2, rad);
 			
-			if(bShowMarker)
-			{	
-				for(Points p : interPList)
-				{
-					putMarkers(p, 3);
-				}
-			}
+			/*for(Points p : interPList)
+			{
+				putMarkers(p, 3);
+			}*/
 						
 			boolean bInDining = checkDining(interPList);
 			
@@ -473,7 +397,6 @@ public class PhoenixPathway extends Plugin
 					for(int x = 1; (x+1) < checkPList.size();)
 					{
 						LineSegement freeAS = new LineSegement(checkPList.get(x), checkPList.get(x+1));
-						freeAS.parent = center;
 						arcSegList.add(freeAS);
 						
 						//putMarkers(checkPList.get(x), true);
@@ -487,7 +410,6 @@ public class PhoenixPathway extends Plugin
 					for(int x = 0; (x+1) < checkPList.size();)
 					{
 						LineSegement freeAS = new LineSegement(checkPList.get(x), checkPList.get(x+1));
-						freeAS.parent = center;
 						arcSegList.add(freeAS);
 						
 						//putMarkers(checkPList.get(x), false);
@@ -502,17 +424,6 @@ public class PhoenixPathway extends Plugin
 			
 			return arcSegList;
 			//JOptionPane.showMessageDialog(null, bCheckP1);			
-		}
-		
-		public int[] collectParentIndexes()
-		{
-			int[] indxArr = new int[3];
-			
-			indxArr[0] = masterListIndx;
-			indxArr[1] = listIndx;
-			indxArr[2] = currSegIndx;
-			
-			return indxArr;
 		}
 		
 		public List<Points> getIntersectionInHome(Points center, Points pArc1, Points pArc2, float rad)
@@ -561,7 +472,7 @@ public class PhoenixPathway extends Plugin
 			{
 				String fName = hpf.getName();
 				
-				if(!markBoxName.contains(fName))
+				if(!fName.equals("boxred") && !fName.equals("boxgreen") )
 				{
 					boolean bCheck1 = hpf.containsPoint(test.x, test.y, FURN_TOLERANCE);
 					
@@ -1092,7 +1003,15 @@ public class PhoenixPathway extends Plugin
 		{
 			HomePieceOfFurniture box = null;
 			
-			box = markBoxes[indx].clone();			
+			if(indx == 0)
+				box = markBoxes[0].clone();
+			else if(indx == 1)
+				box = markBoxes[1].clone();
+			else if(indx == 2)
+				box = markBoxes[2].clone();
+			else if(indx == 3)
+				box = markBoxes[3].clone();
+			
 			box.setX(p.x);
 			box.setY(p.y);
 			home.addPieceOfFurniture(box);
@@ -1100,14 +1019,14 @@ public class PhoenixPathway extends Plugin
 		
 		public HomePieceOfFurniture[] getMarkerBoxes()
 		{
-			HomePieceOfFurniture[] markBoxes = new HomePieceOfFurniture[MARKBOX_COUNT];
+			HomePieceOfFurniture[] markBoxes = new HomePieceOfFurniture[4];
 			int count = 0;
 			
 			List<FurnitureCategory> fCatg = getUserPreferences().getFurnitureCatalog().getCategories();
 			
 			for(int c = 0; c < fCatg.size(); c++ )
 			{
-				if(count >= MARKBOX_COUNT)
+				if(count >= 4)
 					break;
 				
 				List<CatalogPieceOfFurniture> catPOF = fCatg.get(c).getFurniture();
@@ -1117,41 +1036,25 @@ public class PhoenixPathway extends Plugin
 					if(catPOF.get(p).getName().equals("boxred"))
 					{
 						markBoxes[0] = new HomePieceOfFurniture(catPOF.get(p));
-						markBoxName.add("boxred");
 						count++;
 					}
 					else if(catPOF.get(p).getName().equals("boxgreen"))
 					{
 						markBoxes[1] = new HomePieceOfFurniture(catPOF.get(p));
-						markBoxName.add("boxgreen");
 						count++;
 					}
 					else if(catPOF.get(p).getName().equals("boxblue"))
 					{
 						markBoxes[2] = new HomePieceOfFurniture(catPOF.get(p));
-						markBoxName.add("boxblue");
 						count++;
 					}
 					else if(catPOF.get(p).getName().equals("boxyellow"))
 					{
 						markBoxes[3] = new HomePieceOfFurniture(catPOF.get(p));
-						markBoxName.add("boxyellow");
-						count++;
-					}
-					else if(catPOF.get(p).getName().equals("boxteal"))
-					{
-						markBoxes[4] = new HomePieceOfFurniture(catPOF.get(p));
-						markBoxName.add("boxteal");
-						count++;
-					}
-					else if(catPOF.get(p).getName().equals("boxblack"))
-					{
-						markBoxes[5] = new HomePieceOfFurniture(catPOF.get(p));
-						markBoxName.add("boxblack");
 						count++;
 					}
 					
-					if(count >= MARKBOX_COUNT)
+					if(count >= 4)
 						break;
 				}	
 			}
